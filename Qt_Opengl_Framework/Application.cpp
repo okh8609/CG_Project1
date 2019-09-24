@@ -493,16 +493,17 @@ void Application::Dither_FS()
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
 
-			double ggg = img_data[offset_rgba + 0 + 4] * 7.0 / 16.0 +
-						img_data[offset_rgba + 0 + img_width * 4 - 4] * 3.0 / 16.0 +
-						img_data[offset_rgba + 0 + img_width * 4] * 5.0 / 16.0 +
-						img_data[offset_rgba + 0 + img_width * 4 + 4] * 1.0 / 16.0;
-
-			//¤G­È¤Æ
-			ggg = (ggg > threshold) ? WHITE : BLACK;
+			uchar oldpixel = img_data[offset_rgba + 0];
+			uchar newpixel = (oldpixel > threshold) ? WHITE : BLACK;
+			img_data[offset_rgba + 0] = newpixel;
+			int quant_error = oldpixel - newpixel;
+			img_data[offset_rgba + 0 + 4] = SET0TO255(img_data[offset_rgba + 0 + 4] + quant_error * 7.0 / 16.0);
+			img_data[offset_rgba + 0 + img_width * 4 - 4] = SET0TO255(img_data[offset_rgba + 0 + img_width * 4 - 4] + quant_error * 3.0 / 16.0);
+			img_data[offset_rgba + 0 + img_width * 4] = SET0TO255(img_data[offset_rgba + 0 + img_width * 4] + quant_error * 5.0 / 16.0);
+			img_data[offset_rgba + 0 + img_width * 4 + 4] = SET0TO255(img_data[offset_rgba + 0 + img_width * 4 + 4] + quant_error * 1.0 / 16.0);
 
 			for (int k = 0; k < 3; k++)
-				img_data[offset_rgba + k] = ggg;
+				img_data[offset_rgba + k] = newpixel;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -520,13 +521,9 @@ void Application::Dither_FS()
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Dither_Color()
 {
-	unsigned char *rgb = this->To_RGB();
 
 
 
-	delete[] rgb;
-	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
-	renew();
 }
 
 //------------------------Filter------------------------
