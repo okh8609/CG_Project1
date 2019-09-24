@@ -705,9 +705,46 @@ void Application::Filter_Edge()
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Filter_Enhance()
 {
-	unsigned char *rgb = this->To_RGB();
+	INT8 ff[25] = {
+			1,  4 ,  6,  4 , 1,
+			4, 16 , 24, 16 , 4,
+			6, 24 , 36, 24 , 6,
+			4, 16 , 24, 16 , 4,
+			1,  4 ,  6,  4 , 1 };
+	int fff = 256;
 
+	unsigned char *rgb = To_RGB();
 
+	for (int i = 2; i < img_height - 2; i++)
+	{
+		for (int j = 2; j < img_width - 2; j++)
+		{
+			int offset_rgb = i * img_width * 3 + j * 3;
+			int offset_rgba = i * img_width * 4 + j * 4;
+
+			double rrr = 0, ggg = 0, bbb = 0;
+
+			for (INT8 x = -2; x < 3; x++)
+			{
+				for (INT8 y = -2; y < 3; y++)
+				{
+					rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+				}
+			}
+
+			rrr = 2 * rgb[offset_rgb + rr] - (rrr / fff);
+			ggg = 2 * rgb[offset_rgb + gg] - (ggg / fff);
+			bbb = 2 * rgb[offset_rgb + bb] - (bbb / fff);
+
+			img_data[offset_rgba + rr] = (rrr > 255) ? 255 : rrr;
+			img_data[offset_rgba + gg] = (ggg > 255) ? 255 : ggg;
+			img_data[offset_rgba + bb] = (bbb > 255) ? 255 : bbb;
+
+			img_data[offset_rgba + aa] = WHITE;
+		}
+	}
 
 	delete[] rgb;
 	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
