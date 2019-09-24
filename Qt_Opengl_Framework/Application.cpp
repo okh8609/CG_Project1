@@ -2,6 +2,7 @@
 #include "qt_opengl_framework.h"
 #include <vector>
 #include <omp.h>
+#define SET0TO255(X)  ((X) > (255) ? (255) : ((X) < (0) ? (0) : (X)))
 
 Application::Application()
 {
@@ -423,22 +424,6 @@ void Application::Dither_Random()
 }
 ///////////////////////////////////////////////////////////////////////////////
 //
-//  Perform Floyd-Steinberg dithering on the image.  Return success of 
-//  operation.
-//
-///////////////////////////////////////////////////////////////////////////////
-void Application::Dither_FS()
-{
-	unsigned char *rgb = this->To_RGB();
-
-
-
-	delete[] rgb;
-	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
-	renew();
-}
-///////////////////////////////////////////////////////////////////////////////
-//
 //  Perform clustered differing of the image.  Return success of operation.
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -446,7 +431,81 @@ void Application::Dither_Cluster()
 {
 	unsigned char *rgb = this->To_RGB();
 
+	UINT8 I[4][4] =
+	{ { 0.7059 * 255, 0.3529 * 255, 0.5882 * 255, 0.2353 * 255 },
+	  { 0.0588 * 255, 0.9412 * 255, 0.8235 * 255, 0.4118 * 255 },
+	  { 0.4706 * 255, 0.7647 * 255, 0.8824 * 255, 0.1176 * 255 },
+	  { 0.1765 * 255, 0.5294 * 255, 0.2941 * 255, 0.6471 * 255 } };
 
+	for (int i = 0; i < img_height; i++)
+	{
+		for (int j = 0; j < img_width; j++)
+		{
+			int offset_rgb = i * img_width * 3 + j * 3;
+			int offset_rgba = i * img_width * 4 + j * 4;
+
+			//先轉灰階
+			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+			//二值化
+			gray = (gray > I[i % 4][j % 4]) ? WHITE : BLACK;
+
+			for (int k = 0; k < 3; k++)
+				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + aa] = WHITE;
+		}
+	}
+
+	delete[] rgb;
+	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
+	renew();
+}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  Perform Floyd-Steinberg dithering on the image.  Return success of 
+//  operation.
+//
+///////////////////////////////////////////////////////////////////////////////
+void Application::Dither_FS()
+{
+	const uint8_t threshold = 127;
+	unsigned char *rgb = To_RGB();
+
+	//先轉灰階
+	for (int i = 0; i < img_height; i++)
+	{
+		for (int j = 0; j < img_width; j++)
+		{
+			int offset_rgb = i * img_width * 3 + j * 3;
+			int offset_rgba = i * img_width * 4 + j * 4;
+
+			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+
+			for (int k = 0; k < 3; k++)
+				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + aa] = WHITE;
+		}
+	}
+
+	for (int i = 0; i < img_height - 1; i++)
+	{
+		for (int j = 1; j < img_width - 1; j++)
+		{
+			int offset_rgb = i * img_width * 3 + j * 3;
+			int offset_rgba = i * img_width * 4 + j * 4;
+
+			double ggg = img_data[offset_rgba + 0 + 4] * 7.0 / 16.0 +
+						img_data[offset_rgba + 0 + img_width * 4 - 4] * 3.0 / 16.0 +
+						img_data[offset_rgba + 0 + img_width * 4] * 5.0 / 16.0 +
+						img_data[offset_rgba + 0 + img_width * 4 + 4] * 1.0 / 16.0;
+
+			//二值化
+			ggg = (ggg > threshold) ? WHITE : BLACK;
+
+			for (int k = 0; k < 3; k++)
+				img_data[offset_rgba + k] = ggg;
+			img_data[offset_rgba + aa] = WHITE;
+		}
+	}
 
 	delete[] rgb;
 	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
@@ -471,36 +530,6 @@ void Application::Dither_Color()
 }
 
 //------------------------Filter------------------------
-
-///////////////////////////////////////////////////////////////////////////////
-//
-//     Filtering the img_data array by the filter from the parameters
-//
-///////////////////////////////////////////////////////////////////////////////
-
-
-//void Application::filtering(double filter[][5])
-//{
-//	unsigned char *rgb = this->To_RGB();
-//
-//
-//
-//	delete[] rgb;
-//	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
-//	renew();
-//}
-//
-//void Application::filtering(double **filter, int n)
-//{
-//	unsigned char *rgb = this->To_RGB();
-//
-//
-//
-//	delete[] rgb;
-//	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
-//	renew();
-//}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -686,9 +715,9 @@ void Application::Filter_Edge()
 				}
 			}
 
-			img_data[offset_rgba + rr] = rgb[offset_rgb + rr] - (rrr / fff);
-			img_data[offset_rgba + gg] = rgb[offset_rgb + gg] - (ggg / fff);
-			img_data[offset_rgba + bb] = rgb[offset_rgb + bb] - (bbb / fff);
+			img_data[offset_rgba + rr] = SET0TO255(rgb[offset_rgb + rr] - (rrr / fff));
+			img_data[offset_rgba + gg] = SET0TO255(rgb[offset_rgb + gg] - (ggg / fff));
+			img_data[offset_rgba + bb] = SET0TO255(rgb[offset_rgb + bb] - (bbb / fff));
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -734,13 +763,9 @@ void Application::Filter_Enhance()
 				}
 			}
 
-			rrr = 2 * rgb[offset_rgb + rr] - (rrr / fff);
-			ggg = 2 * rgb[offset_rgb + gg] - (ggg / fff);
-			bbb = 2 * rgb[offset_rgb + bb] - (bbb / fff);
-
-			img_data[offset_rgba + rr] = (rrr > 255) ? 255 : rrr;
-			img_data[offset_rgba + gg] = (ggg > 255) ? 255 : ggg;
-			img_data[offset_rgba + bb] = (bbb > 255) ? 255 : bbb;
+			img_data[offset_rgba + rr] = SET0TO255(2 * rgb[offset_rgb + rr] - (rrr / fff));
+			img_data[offset_rgba + gg] = SET0TO255(2 * rgb[offset_rgb + gg] - (ggg / fff));
+			img_data[offset_rgba + bb] = SET0TO255(2 * rgb[offset_rgb + bb] - (bbb / fff));
 
 			img_data[offset_rgba + aa] = WHITE;
 		}
@@ -1036,8 +1061,6 @@ void Application::Paint_Stroke(const Stroke& s)
 
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 //      Build a Stroke
@@ -1055,6 +1078,8 @@ Stroke::Stroke(unsigned int iradius, unsigned int ix, unsigned int iy,
 	radius(iradius), x(ix), y(iy), r(ir), g(ig), b(ib), a(ia)
 {
 }
+
+
 
 
 

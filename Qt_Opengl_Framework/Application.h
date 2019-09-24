@@ -40,8 +40,8 @@ public:
 	void Dither_Color();
 
 	// Filter
-	void filtering(double filter[][5]);
-	void filtering(double **filter, int n);
+	//void filtering(double filter[][5]);
+	//void filtering(double **filter, int n);
 	void Filter_Box();
 	void Filter_Bartlett();
 	void Filter_Gaussian();
