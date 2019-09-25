@@ -247,7 +247,6 @@ void Application::Quant_Populosity()
 		for (int j = 0; j < img_width; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
-			// int offset_rgba = i * img_width * 4 + j * 4;
 
 			int r = rgb[offset_rgb + rr] / 8;
 			int g = rgb[offset_rgb + gg] / 8;
@@ -338,8 +337,8 @@ void Application::Dither_Threshold()
 void Application::Dither_Bright()
 {
 	unsigned char *rgb = this->To_RGB();
-	uint8_t threshold = 127;
-	double sum = 0;
+
+	long long hstg[256] = { 0 }; //Histogram
 
 	for (int i = 0; i < img_height; i++)
 	{
@@ -350,14 +349,20 @@ void Application::Dither_Bright()
 
 			//先轉灰階
 			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
-			sum += gray;
+			++hstg[gray]; //統計++
 
 			img_data[offset_rgba + 0] = gray; //暫放灰階值在第一個通道
 		}
 	}
 
-	threshold = sum / img_height / img_width;
-
+	//統計出threshold
+	uint8_t threshold = 127;
+	double acc = 0;
+	for (int i = 0; i < 255; ++i)
+	{
+		acc += hstg[i];
+	}
+	threshold = 255 - (acc / img_height * img_width);
 
 #pragma omp parallel for
 	for (int i = 0; i < img_height; i++)
@@ -496,7 +501,7 @@ void Application::Dither_FS()
 			uchar oldpixel = img_data[offset_rgba + 0];
 			uchar newpixel = (oldpixel > threshold) ? WHITE : BLACK;
 			img_data[offset_rgba + 0] = newpixel;
-			int quant_error = oldpixel - newpixel;
+			double quant_error = oldpixel - newpixel;
 			img_data[offset_rgba + 0 + 4] = SET0TO255(img_data[offset_rgba + 0 + 4] + quant_error * 7.0 / 16.0);
 			img_data[offset_rgba + 0 + img_width * 4 - 4] = SET0TO255(img_data[offset_rgba + 0 + img_width * 4 - 4] + quant_error * 3.0 / 16.0);
 			img_data[offset_rgba + 0 + img_width * 4] = SET0TO255(img_data[offset_rgba + 0 + img_width * 4] + quant_error * 5.0 / 16.0);
@@ -521,9 +526,51 @@ void Application::Dither_FS()
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Dither_Color()
 {
+	const uint8_t threshold = 127;
+	unsigned char *rgb = To_RGB();
 
+#pragma omp parallel for
+	for (int i = 0; i < img_height - 1; i++)
+	{
+		for (int j = 1; j < img_width - 1; j++)
+		{
+			int offset_rgb = i * img_width * 3 + j * 3;
+			int offset_rgba = i * img_width * 4 + j * 4;
 
+			img_data[offset_rgba + rr] = rgb[offset_rgb + rr];
+			img_data[offset_rgba + gg] = rgb[offset_rgb + gg];
+			img_data[offset_rgba + bb] = rgb[offset_rgb + bb];
+			img_data[offset_rgba + aa] = WHITE;
+		}
+	}
 
+#pragma omp parallel for
+	for (int kk = 0; kk < 3; ++kk)
+	{
+		for (int i = 0; i < img_height - 1; i++)
+		{
+			for (int j = 1; j < img_width - 1; j++)
+			{
+				int offset_rgb = i * img_width * 3 + j * 3;
+				int offset_rgba = i * img_width * 4 + j * 4;
+
+				uchar oldpixel = img_data[offset_rgba + kk];
+				uchar newpixel = (oldpixel > threshold) ? 255 : 0;
+				img_data[offset_rgba + kk] = newpixel;
+				double quant_error = oldpixel - newpixel;
+				img_data[offset_rgba + kk + 4] = SET0TO255(img_data[offset_rgba + kk + 4] + quant_error * 7.0 / 16.0);
+				img_data[offset_rgba + kk + img_width * 4 - 4] = SET0TO255(img_data[offset_rgba + kk + img_width * 4 - 4] + quant_error * 3.0 / 16.0);
+				img_data[offset_rgba + kk + img_width * 4] = SET0TO255(img_data[offset_rgba + kk + img_width * 4] + quant_error * 5.0 / 16.0);
+				img_data[offset_rgba + kk + img_width * 4 + 4] = SET0TO255(img_data[offset_rgba + kk + img_width * 4 + 4] + quant_error * 1.0 / 16.0);
+
+				img_data[offset_rgba + kk] = newpixel;
+			}
+		}
+	}
+
+	delete[] rgb;
+	mImageDst = QImage(img_data, img_width, img_height, QImage::Format_ARGB32);
+	renew();
 }
 
 //------------------------Filter------------------------
