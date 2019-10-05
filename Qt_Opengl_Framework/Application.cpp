@@ -161,7 +161,7 @@ void Application::Gray()
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
-			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+			uint8_t gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
 
 			for (int k = 0; k < 3; k++)
 				img_data[offset_rgba + k] = gray;
@@ -211,9 +211,9 @@ void Application::Quant_Uniform()
 struct popuCell
 {
 	long long data; //最大可能到總像素
-	uint8_t ir; //index red
-	uint8_t ig; //index green
-	uint8_t ib; //index blue
+	uint8_t ir; //index red (0-31)
+	uint8_t ig; //index green (0-31)
+	uint8_t ib; //index blue (0-31)
 };
 
 typedef struct popuCell popuCell;
@@ -304,6 +304,7 @@ void Application::Quant_Populosity()
 void Application::Dither_Threshold()
 {
 	const uint8_t threshold = 127;
+
 	unsigned char *rgb = this->To_RGB();
 
 	for (int i = 0; i < img_height; i++)
@@ -314,12 +315,14 @@ void Application::Dither_Threshold()
 			int offset_rgba = i * img_width * 4 + j * 4;
 
 			//先轉灰階
-			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+			uint8_t gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+
 			//二值化
 			gray = (gray > threshold) ? WHITE : BLACK;
 
-			for (int k = 0; k < 3; k++)
-				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + rr] = gray;
+			img_data[offset_rgba + gg] = gray;
+			img_data[offset_rgba + bb] = gray;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -345,13 +348,12 @@ void Application::Dither_Bright()
 		for (int j = 0; j < img_width; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
-			int offset_rgba = i * img_width * 4 + j * 4;
 
 			//先轉灰階
-			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+			uint8_t gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
 			++hstg[gray]; //統計++
 
-			img_data[offset_rgba + 0] = gray; //暫放灰階值在第一個通道
+			rgb[offset_rgb + 0] = gray; //暫放灰階值在第0個通道!!
 		}
 	}
 
@@ -373,11 +375,12 @@ void Application::Dither_Bright()
 			int offset_rgba = i * img_width * 4 + j * 4;
 
 			//二值化
-			unsigned char gray = img_data[offset_rgba + 0];  //取出暫放的灰階值
+			uint8_t gray = rgb[offset_rgb + 0];  //取出暫放的灰階值
 			gray = (gray > threshold) ? WHITE : BLACK;
 
-			for (int k = 0; k < 3; k++)
-				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + rr] = gray;
+			img_data[offset_rgba + gg] = gray;
+			img_data[offset_rgba + bb] = gray;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -417,8 +420,9 @@ void Application::Dither_Random()
 			//二值化
 			gray = (gray > threshold) ? WHITE : BLACK;
 
-			for (int k = 0; k < 3; k++)
-				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + rr] = gray;
+			img_data[offset_rgba + gg] = gray;
+			img_data[offset_rgba + bb] = gray;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -450,12 +454,13 @@ void Application::Dither_Cluster()
 			int offset_rgba = i * img_width * 4 + j * 4;
 
 			//先轉灰階
-			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+			uint8_t gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
 			//二值化
 			gray = (gray > I[i % 4][j % 4]) ? WHITE : BLACK;
 
-			for (int k = 0; k < 3; k++)
-				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + rr] = gray;
+			img_data[offset_rgba + gg] = gray;
+			img_data[offset_rgba + bb] = gray;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -483,10 +488,11 @@ void Application::Dither_FS()
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
 
-			unsigned char gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
+			uint8_t gray = 0.3 * rgb[offset_rgb + rr] + 0.59 * rgb[offset_rgb + gg] + 0.11 * rgb[offset_rgb + bb];
 
-			for (int k = 0; k < 3; k++)
-				img_data[offset_rgba + k] = gray;
+			img_data[offset_rgba + rr] = gray;
+			img_data[offset_rgba + gg] = gray;
+			img_data[offset_rgba + bb] = gray;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -498,9 +504,9 @@ void Application::Dither_FS()
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
 
-			uchar oldpixel = img_data[offset_rgba + 0];
-			uchar newpixel = (oldpixel > threshold) ? WHITE : BLACK;
-			img_data[offset_rgba + 0] = newpixel;
+			uint8_t oldpixel = img_data[offset_rgba + 0];
+			uint8_t newpixel = (oldpixel > threshold) ? WHITE : BLACK;
+			// img_data[offset_rgba + 0] = newpixel;
 			double quant_error = oldpixel - newpixel;
 			img_data[offset_rgba + 0 + 4] = SET0TO255(img_data[offset_rgba + 0 + 4] + quant_error * 7.0 / 16.0);
 			img_data[offset_rgba + 0 + img_width * 4 - 4] = SET0TO255(img_data[offset_rgba + 0 + img_width * 4 - 4] + quant_error * 3.0 / 16.0);
@@ -537,6 +543,8 @@ void Application::Dither_Color()
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
 
+			//要先去取樣建表?? 我是覺得結果不會差很多啦...
+
 			img_data[offset_rgba + rr] = rgb[offset_rgb + rr];
 			img_data[offset_rgba + gg] = rgb[offset_rgb + gg];
 			img_data[offset_rgba + bb] = rgb[offset_rgb + bb];
@@ -554,16 +562,14 @@ void Application::Dither_Color()
 				int offset_rgb = i * img_width * 3 + j * 3;
 				int offset_rgba = i * img_width * 4 + j * 4;
 
-				uchar oldpixel = img_data[offset_rgba + kk];
-				uchar newpixel = (oldpixel > threshold) ? 255 : 0;
+				uint8_t oldpixel = img_data[offset_rgba + kk];
+				uint8_t newpixel = (oldpixel > threshold) ? 255 : 0;
 				img_data[offset_rgba + kk] = newpixel;
 				double quant_error = oldpixel - newpixel;
 				img_data[offset_rgba + kk + 4] = SET0TO255(img_data[offset_rgba + kk + 4] + quant_error * 7.0 / 16.0);
 				img_data[offset_rgba + kk + img_width * 4 - 4] = SET0TO255(img_data[offset_rgba + kk + img_width * 4 - 4] + quant_error * 3.0 / 16.0);
 				img_data[offset_rgba + kk + img_width * 4] = SET0TO255(img_data[offset_rgba + kk + img_width * 4] + quant_error * 5.0 / 16.0);
 				img_data[offset_rgba + kk + img_width * 4 + 4] = SET0TO255(img_data[offset_rgba + kk + img_width * 4 + 4] + quant_error * 1.0 / 16.0);
-
-				img_data[offset_rgba + kk] = newpixel;
 			}
 		}
 	}
@@ -831,7 +837,7 @@ void Application::Half_Size()
 {
 	int new_width = img_width / 2;
 	int new_height = img_height / 2;
-	uchar *new_data = new uchar[new_width * new_height * 4];
+	uint8_t *new_data = new uint8_t[new_width * new_height * 4];
 
 	for (int i = 0; i < new_height; ++i)
 	{
@@ -866,8 +872,9 @@ void Application::Double_Size()
 {
 	int new_width = img_width * 2;
 	int new_height = img_height * 2;
-	uchar *new_data = new uchar[new_width * new_height * 4];
+	uint8_t *new_data = new uint8_t[new_width * new_height * 4];
 
+	//效能可能比較差 多了蠻多次重複的記憶體存取的 不過速度尚可
 	for (int i = 0; i < new_height; ++i)
 	{
 		for (int j = 0; j < new_width; ++j)
