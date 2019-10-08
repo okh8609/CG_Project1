@@ -588,6 +588,14 @@ void Application::Dither_Color()
 ///////////////////////////////////////////////////////////////////////////////
 void Application::Filter_Box()
 {
+	INT8 ff[25] = {
+			1,1,1,1,1,
+			1,1,1,1,1,
+			1,1,1,1,1,
+			1,1,1,1,1,
+			1,1,1,1,1 };
+	int fff = 25;
+
 	unsigned char *rgb = To_RGB();
 
 	for (int i = 2; i < img_height - 2; i++)
@@ -597,23 +605,24 @@ void Application::Filter_Box()
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
 
-			double rrr = 0;
-			double ggg = 0;
-			double bbb = 0;
+			double rrr = 0, ggg = 0, bbb = 0;
 
 			for (INT8 x = -2; x < 3; x++)
 			{
 				for (INT8 y = -2; y < 3; y++)
 				{
-					rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3];
-					ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3];
-					bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3];
+					if (offset_rgb + x * img_width * 3 + y * 3 >= 0)
+					{
+						rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					}
 				}
 			}
 
-			img_data[offset_rgba + rr] = rrr / 25;
-			img_data[offset_rgba + gg] = ggg / 25;
-			img_data[offset_rgba + bb] = bbb / 25;
+			img_data[offset_rgba + rr] = rrr / fff;
+			img_data[offset_rgba + gg] = ggg / fff;
+			img_data[offset_rgba + bb] = bbb / fff;
 			img_data[offset_rgba + aa] = WHITE;
 		}
 	}
@@ -653,9 +662,12 @@ void Application::Filter_Bartlett()
 			{
 				for (INT8 y = -2; y < 3; y++)
 				{
-					rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					if (offset_rgb + x * img_width * 3 + y * 3 >= 0)
+					{
+						rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					}
 				}
 			}
 
@@ -701,9 +713,12 @@ void Application::Filter_Gaussian()
 			{
 				for (INT8 y = -2; y < 3; y++)
 				{
-					rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					if (offset_rgb + x * img_width * 3 + y * 3 >= 0)
+					{
+						rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					}
 				}
 			}
 
