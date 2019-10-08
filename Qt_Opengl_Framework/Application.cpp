@@ -598,9 +598,9 @@ void Application::Filter_Box()
 
 	unsigned char *rgb = To_RGB();
 
-	for (int i = 2; i < img_height - 2; i++)
+	for (int i = 0; i < img_height; i++)
 	{
-		for (int j = 2; j < img_width - 2; j++)
+		for (int j = 0; j < img_width; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
@@ -649,9 +649,9 @@ void Application::Filter_Bartlett()
 
 	unsigned char *rgb = To_RGB();
 
-	for (int i = 2; i < img_height - 2; i++)
+	for (int i = 0; i < img_height; i++)
 	{
-		for (int j = 2; j < img_width - 2; j++)
+		for (int j = 0; j < img_width; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
@@ -700,9 +700,9 @@ void Application::Filter_Gaussian()
 
 	unsigned char *rgb = To_RGB();
 
-	for (int i = 2; i < img_height - 2; i++)
+	for (int i = 0; i < img_height; i++)
 	{
-		for (int j = 2; j < img_width - 2; j++)
+		for (int j = 0; j < img_width; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
@@ -761,9 +761,9 @@ void Application::Filter_Edge()
 
 	unsigned char *rgb = To_RGB();
 
-	for (int i = 2; i < img_height - 2; i++)
+	for (int i = 0; i < img_height ; i++)
 	{
-		for (int j = 2; j < img_width - 2; j++)
+		for (int j = 0; j < img_width ; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
@@ -774,9 +774,12 @@ void Application::Filter_Edge()
 			{
 				for (INT8 y = -2; y < 3; y++)
 				{
-					rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					if (offset_rgb + x * img_width * 3 + y * 3 >= 0)
+					{
+						rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					}
 				}
 			}
 
@@ -809,9 +812,9 @@ void Application::Filter_Enhance()
 
 	unsigned char *rgb = To_RGB();
 
-	for (int i = 2; i < img_height - 2; i++)
+	for (int i = 0; i < img_height ; i++)
 	{
-		for (int j = 2; j < img_width - 2; j++)
+		for (int j = 0; j < img_width; j++)
 		{
 			int offset_rgb = i * img_width * 3 + j * 3;
 			int offset_rgba = i * img_width * 4 + j * 4;
@@ -822,9 +825,12 @@ void Application::Filter_Enhance()
 			{
 				for (INT8 y = -2; y < 3; y++)
 				{
-					rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
-					bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					if (offset_rgb + x * img_width * 3 + y * 3 >= 0)
+					{
+						rrr += rgb[offset_rgb + rr + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						ggg += rgb[offset_rgb + gg + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+						bbb += rgb[offset_rgb + bb + x * img_width * 3 + y * 3] * ff[(x + 2) * 5 + (y + 2)];
+					}
 				}
 			}
 
